@@ -6,6 +6,7 @@
     (:div :class "byline" "By " (who:esc (article-byline article)))
 
     (:form
+     :class "overviewable"
      (loop :for para :in (article-paragraphs article)
            :for i :from 1
            :do
@@ -26,10 +27,23 @@
                                         ;(who:fmt "[~A]  " (elt "abcdefghi" j))
                              )
                          "  "))
+               (:span :class "tag-container")
+               #+nil
                (when (< (random 100) 20)
                  (who:htm
                   (:span :class "tag tag-dark tag-inline" :style "background-color: #CC0000;;"
-                         "inane"))))))))))
+                         "inane"))))
+              (when (eql i 1)
+                (who:htm
+                 (:blockquote
+                  "There are numerous examples of liberals who expound
+               moralism in all its forms.  To suggest that modern
+               liberals care not for morals is absurd.  Many would
+               argue the opposite, that they care deeply for the poor
+               but conservatives lack the common decency to ...")))
+
+
+              ))))))
 
 (defun rounded-corners (amounts)
   (format nil
@@ -55,8 +69,12 @@
     (:.article :width "60%" :float "right")
     (:.annotations :width "38%" :float "left")
 
+    ;; article overview mode
+    ((css-sexp:ancestor :.article :.overview-mode)
+     :width "50%" :font-size "6pt")
+
     ;; paragraph/sentence styling
-    (:p :line-height "1.5em")
+    (:p :line-height "1.5em" :clear "both")
     ((css-sexp:ancestor :p.checked :.sentence)
      :border "1px solid #ddd"
      :background-color "#eee")
@@ -101,15 +119,22 @@
 
     ;; labels
 ;    (:.tag :xbrowser-border-radius "5px" :font "9pt verdana,arial,sans-serif" :line-height "12px" :padding "2px 5px")
-    (:.tag :xbrowser-border-radius "3px" :font "10px verdana,arial,sans-serif" :line-height "12px" :padding "2px 5px")
+    (:.tag :xbrowser-border-radius "3px" :font "10px verdana,arial,sans-serif" :line-height "12px" :padding "2px 5px" :white-space "nowrap")
     (:.tag-inline :position "relative" :top "-8px")
     (:.tag-light :color "#F9FFEF")
     (:.tag-dark :color "#FFE3E3")
 
+    ;; reactions
+    ((css-sexp:ancestor :blockquote)
+     :margin "1.5em"
+     :border-left "4px solid #eee"
+     :padding ".1em .5em"
+     :line-height "1.5em")
+
     ;; checkbox
-    (:p :position "relative" :left "-20px")
+    (:p :position "relative" :left "-30px")
     (:.para-check :float "left" :display "block" :width "19px")
-    ((css-sexp:direct-ancestor :p :.contents) :display "block" :margin-left "20px")
+    ((css-sexp:direct-ancestor :p :.contents) :display "block" :margin-left "30px")
 
     ;; status
     (:.status :float "right" :background-color "#111" :border "1px solid #000" :color "#fff" :padding "1px 3px")
@@ -142,11 +167,9 @@
             (:div :class "tab-content"
                   (:div :id "status" :class "status" "Paragraph 3, sentence 8")
                   (:h3 "Tags")
-                  (:span :class "tag tag-dark" :style "background-color: #CC0000;;"
-                         "inane")
-                  "  "
-                  (:span :class "tag tag-light" :style "background-color: #64992C;"
-                         "insightful"))
+                  (:div :class "tag-buttons")
+                  (:h3 "Overview Mode")
+                  (:span :class "toggle-overview overviewable" "hover"))
             #+nil
             (:h3 "Stats")
             #+nil
@@ -163,6 +186,7 @@
             (who:str (output-article-html article)))
 
       (:script :type "text/javascript" :src "/static/jquery-1.4.3.js")
+      (:script :type "text/javascript" :src "/static/op-util.js")
       (:script :type "text/javascript" :src "/static/op-annotate.js"))))))
 
 (webfunk:web-defun static (rest-of-uri)

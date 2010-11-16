@@ -1,20 +1,86 @@
+var ARTICLE = null;
 $(function() {
-      highlightParas();
+      ARTICLE = new Article($(".article")[0]);
+      ARTICLE.highlightParas();
+      
+      var tagButtonsContainer = $(".tag-buttons");
+      TAGS.map(function (tag) {
+                   tagButtonsContainer.append(new TagButton(tag).elem);
+                   tagButtonsContainer.append($("<span>").text("  "));
+               });
+      
+      $(".toggle-overview").mouseenter(function() { $(".overviewable").addClass("overview-mode"); })
+      $(".toggle-overview").mouseleave(function() { $(".overviewable").removeClass("overview-mode"); })
+      
   });
 
-var LAST_CHECKED_ELEM = null;
+function Tag(text, bgColor) {
+    this.color = bgColor;
+    this.text = text;
+}
 
-function observeCheckboxes()
+var TAGS = [new Tag("inane", "#64992C"),
+            new Tag("regurgitation", "#009051"),
+            new Tag("straw man", "#7800ff"),
+            new Tag("inaccurate", "#CC0000"),
+            new Tag("exaggeration", "#ff4800"),
+            new Tag("double standard", "#ffb400")
+            ];
+
+function Annotation(tag) {
+    this.tag = tag;    
+}
+
+
+Tag.prototype.createElem = function () {
+    var elem = $("<span>");
+    elem.addClass("tag");
+    elem.addClass("tag-light");
+    elem.css("background-color", this.color);
+    elem.text(this.text);
+    return elem;
+};
+
+function TagButton(tag) {
+    this.tag = tag;
+
+    var elem = $("<a>");
+    elem.attr("href", "#tags/" + encodeURIComponent(this.tag.text));
+    elem.append(tag.createElem());
+    
+    this.elem = elem;
+
+    $(this.elem).click(
+        function (event) {
+            event.stopPropagation();
+            event.preventDefault();
+            ARTICLE.selectedParagraphs().map(
+                function(p) {
+                    p.addAnnotation(new Annotation(tag));
+                });
+        });
+};
+
+function Article(elem) 
 {
-    $(".para-check").click(
+    var article = this;
+
+    this.elem = elem;
+    this._paragraphs = $("p", this.elem).toArray().map(function (p) {
+                                                           return new Paragraph(p);
+                                                       });
+    this.lastCheckedElem = null;
+
+    var checkboxesJQ = $(this.checkboxes());
+    checkboxesJQ.click(
         function(event) {
             var elem = event.currentTarget;
             var checkp = elem.checked;
             if (event.shiftKey)
             {
-                var elems = $(".para-check").toArray();
+                var elems = checkboxesJQ.toArray();
                 var orig = elems.indexOf(elem);
-                var other = elems.indexOf(LAST_CHECKED_ELEM);
+                var other = elems.indexOf(article.lastCheckedElem);
                 if (orig !== -1 && other !== -1)
                 {
                     var min = Math.min(orig, other);
@@ -27,108 +93,45 @@ function observeCheckboxes()
                 }
             }
 
-            LAST_CHECKED_ELEM = elem;
-            highlightParas();
+            article.lastCheckedElem = elem;
+            article.highlightParas();
         });
 
-    $(".para-check").change(
+    checkboxesJQ.change(
         function(event) {
             var elem = event.currentTarget;
-            //LAST_CHECKED_ELEM = elem;
-            highlightParas();
+            //article.lastCheckedElem = elem;
+            article.highlightParas();
         });
-}
-
-function iter(array) {
-    var i = 0;
-    return function() { return array[i++]; };
-}
-
-function RangeString() {
-    this.ranges = [];
-    return this;
-}
-
-RangeString.prototype.plural = function() {
-    return !(this.ranges.length == 1  && this.ranges[0].start == this.ranges[0].end);
-}
-
-RangeString.prototype.toString = function() {
-    var result = "";
-    var strings = this.ranges.map(
-        function(range) {
-            if (range.end - range.start > .001)
-            {
-                return "" + range.start + "-" + range.end;
-            }
-            else
-            {
-                var start = range.start;
-                return "" + start;
-            }
-        });
-
-    return strings.join(", ");
 };
 
-RangeString.prototype.addInt = function(num) {
-    if (this.ranges.length === 0)
-    {
-        this.ranges = [{"start": num, "end":num}];
-        return;
-    }
-
-    for (var i=0; i < this.ranges.length; i++)
-    {
-        var range = this.ranges[i];
-        var nextRange = this.ranges[i+1];
-        //console.log("%o %o", range, nextRange);
-        if (range.start <= num && num <= range.end)
-        {
-            // do nothing, already in range
-            break;
-        }
-        else if (range.start === num + 1)
-        {
-            range.start = num;
-            //console.log("Expanded range %o at start with %o", range, num);
-        }
-        else if (range.end === num - 1)
-        {
-            range.end = num;
-            //console.log("Expanded range %o at end with %o", range, num);
-        }
-        else if (num < range.start)
-        {
-            this.ranges.splice(i, 0, {"start": num, "end":num});
-            //console.log("Added new range at index %o for %o", i, num);;
-            break;
-        }
-        else if (!nextRange && num > range.end) {
-            this.ranges.splice(i+1, 0, {"start": num, "end":num});
-            //console.log("Added new range at index %o (i+1) for %o", i+1, num);;
-            break;
-        }
-
-        if (nextRange && nextRange.start == range.end) {
-            range.end = nextRange.end;
-            this.ranges.splice(i+1, 1);
-            break;
-        }
-    }
+Article.prototype.paragraphs = function () {
+    return this._paragraphs;    
 };
 
+Article.prototype.selectedParagraphs = function () {
+  return this.paragraphs().filter(function (p) {return p.checkbox().checked; });
+};
 
-function highlightParas() {
+Article.prototype.checkboxes = function ()
+{
+    if (!this._checkboxes)
+    {
+        this._checkboxes = this.paragraphs().map(function(x) { return x.checkbox(); });    
+    }
+    return this._checkboxes;
+};
+
+Article.prototype.highlightParas = function () {
     var i=0;
     var rangeString = "";
     var prevChecked = null;
     var rangestr = new RangeString();
-    var checked = $(".para-check").toArray().map(
+    var checked = this.checkboxes().map(
         function (e) {
             var checkedp = !!e.checked;
             var p = e.parentNode;
-            if (checkedp )
+            if (checkedp)
             {
                 $(p).addClass("checked");
                 rangestr.addInt(i+1);
@@ -140,6 +143,7 @@ function highlightParas() {
             i++;
         });
 
+    // set the status message
     if (rangestr.ranges.length == 0)
     {
         $("#status").hide();
@@ -151,4 +155,32 @@ function highlightParas() {
         var txt = "Selected Paragraph" + (plural ? "s " : " ") + rangestr.toString();
         $("#status").text(txt);
     }
-}
+};
+
+function Paragraph(elem)
+{
+    this.elem = elem;
+    this._checkbox = $(".para-check", this.elem)[0];
+    this._annotations = [];
+};
+
+Paragraph.prototype.checkbox = function() {
+     return this._checkbox;
+};
+
+Paragraph.prototype.addAnnotation = function(annotation)
+{
+    this._annotations.push(annotation);
+    var cont = $(".tag-container", this.elem);
+    cont.append(annotation.tag.createElem());
+    cont.append($("<span>").text("  "));
+};
+
+Paragraph.prototype.removeAnnotation = function(annotation)
+{
+    this._annotations.push(annotation);
+};
+
+Paragraph.prototype.annotations = function() {
+     return this._annotations;
+};
