@@ -5,28 +5,31 @@
     (:h2 (who:esc (article-title article)))
     (:div :class "byline" "By " (who:esc (article-byline article)))
 
-    (loop :for para :in (article-paragraphs article)
-          :for i :from 1
-          :do
-          (who:htm
-           (:p                          ;(who:fmt "~A:  " i)
-             :id (format nil "paragraph-~A" i)
-                 (loop :for j :from 1
-                       :for sent :in (split-sentences para)
-                       :do
-                       (who:htm
-                        (:span :class "sentence"
-                               :id (format nil "sentence-~A-~A" i j)
-                               :title (format nil "Paragraph ~A, sentence ~A" i j)
-                                      (who:esc sent)
+    (:form
+     (loop :for para :in (article-paragraphs article)
+           :for i :from 1
+           :do
+           (who:htm
+            (:p                         ;(who:fmt "~A:  " i)
+              :id (format nil "paragraph-~A" i)
+              (:input :type "checkbox" :class "para-check")
+              (:span 
+               :class "contents"
+               (loop :for j :from 1
+                     :for sent :in (split-sentences para)
+                     :do
+                     (who:htm
+                      (:span :class "sentence"
+                             :id (format nil "sentence-~A-~A" i j)
+                             :title (format nil "Paragraph ~A, sentence ~A" i j)
+                                    (who:esc sent)
                                         ;(who:fmt "[~A]  " (elt "abcdefghi" j))
-                               )
-                        "  "))
-                        (when (< (random 100) 20)
-                          (who:htm
-                           (:span :class "tag tag-dark tag-inline" :style "background-color: #CC0000;;"
-                                  "inane")))
-             )))))
+                             )
+                         "  "))
+               (when (< (random 100) 20)
+                 (who:htm
+                  (:span :class "tag tag-dark tag-inline" :style "background-color: #CC0000;;"
+                         "inane"))))))))))
 
 (defun rounded-corners (amounts)
   (format nil
@@ -54,6 +57,10 @@
 
     ;; paragraph/sentence styling
     (:p :line-height "1.5em")
+    ((css-sexp:ancestor :p.checked :.sentence)
+     :border "1px solid #ddd"
+     :background-color "#eee")
+
     (:.sentence\:hover :border "1px solid #ddd"
                        :background-color "#eee")
     (:.sentence :border "1px solid #fff")
@@ -98,6 +105,14 @@
     (:.tag-inline :position "relative" :top "-8px")
     (:.tag-light :color "#F9FFEF")
     (:.tag-dark :color "#FFE3E3")
+
+    ;; checkbox
+    (:p :position "relative" :left "-20px")
+    (:.para-check :float "left" :display "block" :width "19px")
+    ((css-sexp:direct-ancestor :p :.contents) :display "block" :margin-left "20px")
+
+    ;; status
+    (:.status :float "right" :background-color "#111" :border "1px solid #000" :color "#fff" :padding "1px 3px")
     ))
     
 
@@ -125,7 +140,7 @@
               (:li "Blah")
               (:li :class "selected" "Tag")))
             (:div :class "tab-content"
-                  "blah blah blah"
+                  (:div :id "status" :class "status" "Paragraph 3, sentence 8")
                   (:h3 "Tags")
                   (:span :class "tag tag-dark" :style "background-color: #CC0000;;"
                          "inane")
@@ -145,4 +160,14 @@
             (:form :action "/article" :method "GET"
                    (:input :type "text" :name "url" :style "width: 30em")
                    (:input :type "submit" :value "Scrape Article"))
-            (who:str (output-article-html article))))))))
+            (who:str (output-article-html article)))
+
+      (:script :type "text/javascript" :src "/static/jquery-1.4.3.js")
+      (:script :type "text/javascript" :src "/static/op-annotate.js"))))))
+
+(webfunk:web-defun static (rest-of-uri)
+  (let ((given-path (format nil "/~{~A~^/~}" rest-of-uri)))
+    (webfunk:serve-static-file
+     given-path
+     (asdf:system-relative-pathname (asdf:find-system :op-annotate)
+				    "static/"))))
