@@ -20,6 +20,8 @@
     (:h3 :font-size "1.25em" :margin ".3em 0")
     (:h4 :font-size "1.05em" :margin ".3em 0")
 
+    ((css-sexp:ancestor :h1 :a) :color "#000000" :text-decoration "none")
+
     ;; layout
     (:.article :width "60%" :float "right")
     (:.annotations :width "35%" :position "fixed" :top "5px")
@@ -78,6 +80,8 @@
     (:.tag-inline :position "relative" :top "-8px")
     (:.tag-light :color "#F9FFEF")
     (:.tag-dark :color "#FFE3E3")
+
+    ((css-sexp:direct-ancestor :.tag-buttons :a) :text-decoration "none")
 
     ((css-sexp:ancestor :.tag :.remove)
      :cursor "pointer"

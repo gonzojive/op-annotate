@@ -29,11 +29,12 @@
     (nreverse n)))
 ;  (ppcre:split  string))
 
-(defun split-sentences (string)
-  (let ((n nil))
-    (ppcre:do-matches-as-strings (sent "(\\S.+?[.!?])(?=\\s+|$)" string)
-      (push sent n))
-    (nreverse n)))
+;;(defun split-sentences (string)
+;;  (ppcre:split "\\s\\s|[\\.\\!\\?] " string))
+;;  (let ((n nil))
+;;    (ppcre:do-matches-as-strings (sent "(\\S.+?[.!?])(?=\\s+|$)" string)
+;;      (push sent n))
+;;    (nreverse n)))
 
 (defparameter *article-cache* (make-hash-table :test #'equal))
 (defun download-article (url)

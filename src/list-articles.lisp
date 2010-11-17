@@ -8,14 +8,13 @@
               (:style :type "text/css" (who:str (css))))
        (:body
         (:div :class "annotations"
-              (:h1 "Op-Annotate")
+              (:h1 (:a :href "/" "Op-Annotate"))
               (:h4 "React to NYT articles on the merits")
               (:div 
                :style "position: relative; bottom: -1px;"
                (:ul
                 :class "tabs"
-                (:li :class "selected" "All Articles")
-                (:li "React")))
+                (:li :class "selected" "All Articles")))
               (:div :class "tab-content" :style "border-right: 1px solid "
                     (:div :id "status" :class "status" "")
                     (:ol

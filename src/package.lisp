@@ -7,6 +7,6 @@
 
 (webfunk:web-defpackage :op-annotate
   (:rootp t)
-  (:root-function-name home)
+  (:root-function-name articles)
   (:lisp-packages :op-annotate))
 
