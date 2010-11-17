@@ -1,0 +1,3 @@
+[submodule "lib/jquery-jeditable"]
+	path = lib/jquery-jeditable
+	url = https://github.com/tuupola/jquery_jeditable.git

@@ -7,6 +7,7 @@
 
     (:form
      :class "overviewable"
+     :id "article-form"
      (loop :for para :in (article-paragraphs article)
            :for i :from 1
            :do
@@ -36,11 +37,7 @@
               (when (eql i 1)
                 (who:htm
                  (:blockquote
-                  "There are numerous examples of liberals who expound
-               moralism in all its forms.  To suggest that modern
-               liberals care not for morals is absurd.  Many would
-               argue the opposite, that they care deeply for the poor
-               but conservatives lack the common decency to ...")))
+                  "There are numerous examples of liberals who expound moralism in all its forms.  To suggest that modern liberals care not for morals is absurd.  Many would argue the opposite, that they care deeply for the poor but conservatives lack the common decency to blah.")))
 
 
               ))))))
@@ -67,7 +64,7 @@
 
     ;; layout
     (:.article :width "60%" :float "right")
-    (:.annotations :width "38%" :float "left")
+    (:.annotations :width "35%" :position "fixed" :top "5px")
 
     ;; article overview mode
     ((css-sexp:ancestor :.article :.overview-mode)
@@ -100,7 +97,7 @@
      :border-width "1px 1px 0 0"
      :display "block"
      :float "left"
-     :font-size ".95em"
+     :font-size ".85em"
      :margin "0"
      :padding "4px 1em 3px"
      :white-space "nowrap"
@@ -130,6 +127,10 @@
      :border-left "4px solid #eee"
      :padding ".1em .5em"
      :line-height "1.5em")
+
+    ((css-sexp:ancestor :blockquote :textarea)
+     :width "98%"
+     :min-height "10em")
 
     ;; checkbox
     (:p :position "relative" :left "-30px")
@@ -162,8 +163,8 @@
              :style "position: relative; bottom: -1px;"
              (:ul
               :class "tabs"
-              (:li "Blah")
-              (:li :class "selected" "Tag")))
+              (:li "View")
+              (:li :class "selected" "React")))
             (:div :class "tab-content"
                   (:div :id "status" :class "status" "Paragraph 3, sentence 8")
                   (:h3 "Tags")
@@ -186,6 +187,8 @@
             (who:str (output-article-html article)))
 
       (:script :type "text/javascript" :src "/static/jquery-1.4.3.js")
+;      (:script :type "text/javascript" :src "/static/jquery.jeditable.js")
+      (:script :type "text/javascript" :src "/static/jquery.editable-1.3.3.js")
       (:script :type "text/javascript" :src "/static/op-util.js")
       (:script :type "text/javascript" :src "/static/op-annotate.js"))))))
 

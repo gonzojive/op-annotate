@@ -12,6 +12,28 @@ $(function() {
       $(".toggle-overview").mouseenter(function() { $(".overviewable").addClass("overview-mode"); })
       $(".toggle-overview").mouseleave(function() { $(".overviewable").removeClass("overview-mode"); })
       
+      $('blockquote').editable({
+                                   "type"      : 'textarea',
+                                   "cancel"    : "Cancel",
+                                   "submit"    : "Save",
+                                   "replace"   : null,
+                                   "editValue"     : function() {
+                                       return this.data("op-annotate.text") || this.text();  
+                                   },
+                                   "onEdit"    : function(vals) {
+                                       console.log("current: %o", vals.current);
+                                   },
+                                   "onSubmit"    : function(vals) {
+                                       console.log("current: %o", vals.current);
+                                       var txt = this.data("editable.current");
+                                       lines = txt;
+                                       var html = txt.replace(/\n+/g, "<br/><br/>");
+                                       this.data("op-annotate.text", txt);
+                                       this.html(html);
+                                   }
+                               });
+
+      $("#article-form").submit(function (ev) { ev.preventDefault(); });
   });
 
 function Tag(text, bgColor) {
@@ -24,13 +46,14 @@ var TAGS = [new Tag("inane", "#64992C"),
             new Tag("straw man", "#7800ff"),
             new Tag("inaccurate", "#CC0000"),
             new Tag("exaggeration", "#ff4800"),
-            new Tag("double standard", "#ffb400")
+            new Tag("double standard", "#ffb400"),
+            new Tag("vague", "#444444")
+            
             ];
 
 function Annotation(tag) {
     this.tag = tag;    
 }
-
 
 Tag.prototype.createElem = function () {
     var elem = $("<span>");
