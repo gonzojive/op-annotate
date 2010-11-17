@@ -229,3 +229,8 @@ Paragraph.prototype.removeAnnotation = function(annotation)
 Paragraph.prototype.annotations = function() {
      return this._annotations;
 };
+
+function opAnnotateFBInit()
+{
+
+}

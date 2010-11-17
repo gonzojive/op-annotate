@@ -4,8 +4,23 @@
 (defclass article ()
   ((paragraphs :initarg  :paragraphs :initform nil     :accessor article-paragraphs)
    (html-page :initarg  :html-page :initform nil     :accessor article-html-page)
-   (byline     :accessor article-byline :initarg  :byline)
-   (title      :accessor article-title  :initarg  :title)))
+   (byline     :accessor article-byline :initarg  :byline :index t)
+   (title      :accessor article-title  :initarg  :title)
+   (url        :accessor article-url :initarg :url :initform nil :index t)
+   (creation-date :accessor article-creation-date :initarg :creation-date :initform (get-universal-time) :index t)
+   (publication-date :accessor article-publication-date :initarg :publication-date :initform (get-universal-time) :index t))
+  (:metaclass ele:persistent-metaclass))
+
+(defclass article-annotation ()
+  ((article :initarg  :article :initform nil     :accessor annotation-article :index t)
+   (paragraph-index :initarg  :paragraph-index :initform nil     :accessor annotation-article)
+   (tag :initarg :tag :initform nil     :accessor annotation-tag :index t)
+   (comment :initarg :comment :initform nil :accessor annotation-comment)
+   (user :initarg :user :initform nil :accessor annotation-user :index t))
+  (:metaclass ele:persistent-metaclass))
+
+(defun open-store ()
+  (ele:open-store (list :bdb "/git/op-annotate/data/eledb/")))
 
 (defun split-words (string)
   (let ((n nil))
@@ -22,13 +37,17 @@
 
 (defparameter *article-cache* (make-hash-table :test #'equal))
 (defun download-article (url)
-  (let ((page
-         (or (gethash url *article-cache*)
-             (setf (gethash url *article-cache*)
-                   (drakma:http-request url
-                                        :external-format-in :utf-8
-                                        :cookie-jar (make-instance 'drakma:cookie-jar))))))
-    (parse-nyt-article page)))
+  (multiple-value-bind (page existing)
+      (aif (ele:get-instance-by-value 'article 'url url)
+           (values (article-html-page it) it)
+           (let ((page
+                  (or (gethash url *article-cache*)
+                      (setf (gethash url *article-cache*)
+                            (drakma:http-request url
+                                                 :external-format-in :utf-8
+                                                 :cookie-jar (make-instance 'drakma:cookie-jar))))))
+             (values page nil)))
+    (parse-nyt-article page url existing)))
 
 (defparameter *test-nyt-article* (download-article
                                   "http://www.nytimes.com/2010/11/04/opinion/04orszag.html?partner=rssnyt&emc=rss"))
@@ -51,8 +70,9 @@
     (let ((words (mapcan #'split-words (article-paragraphs article))))
       (remove-if #'trivialp words))))
 
-(defun parse-nyt-article (string)
+(defun parse-nyt-article (string url existing)
   (let ((doc (closure-html:parse string (stp:make-builder))))
+    (defparameter *doc* doc)
 ;  (let ((doc (cxml:parse string (stp:make-builder))))
     (xpath:with-namespaces (("xhtml" "http://www.w3.org/1999/xhtml"))
       (let* ((nodes (xpath:evaluate "//*[@class='articleBody']//xhtml:p" doc))
@@ -67,6 +87,9 @@
                               paragraph-strings)))
              (byline (subseq (stp:string-value (xpath:first-node (xpath:evaluate "//xhtml:h6[@class='byline']" doc)))
                              3))
+             (dateline (subseq (stp:string-value (xpath:first-node (xpath:evaluate "//xhtml:h6[@class='dateline']" doc)))
+                               11))
+             (pubtime (when dateline (date:parse-time dateline)))
 ;             (title-elem (xpath:first-node (xpath:evaluate "//xhtml:h1[@class='articleHeadline']" doc)))
 ;             (title (stp:string-value (stp:first-child title-elem))))
              (title (ppcre:register-groups-bind (headline)
@@ -75,15 +98,15 @@
                                       (xpath:first-node (xpath:evaluate "//xhtml:title" doc)))))
                       headline)))
         
-        (make-instance 'article
-                       :paragraphs paragraphs-clean
-                       :title title
-                       :byline byline
-                       :html-page string)))))
+        (let ((common-args (list
+                            :paragraphs paragraphs-clean
+                            :title title
+                            :byline byline
+                            :html-page string
+                            :url url
+                            :publication-date pubtime)))
+          (if existing
+              (apply #'reinitialize-instance existing common-args)
+              (apply #'make-instance 'article common-args)))))))
 
-
-(defun parse-nyt-article (string)
-  (let ((doc (closure-html:parse string (stp:make-builder))))
-    (xpath:with-namespaces (("xhtml" "http://www.w3.org/1999/xhtml"))
-      (xpath:evaluate "//*[@class='articleBody']//xhtml:p" doc))))
 

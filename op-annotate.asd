@@ -12,9 +12,11 @@
 			:components
 			((:file "package")
 			 (:file "conditions" :depends-on ("package"))
+			 (:file "annotate-article" :depends-on ("conditions" "scrape-nyt"))
+			 (:file "scrape-nyt" :depends-on ("conditions"))
                          
 	       )))
-  :depends-on ("anaphora" "alexandria" "webfunk" "drakma" "closure-html" "cxml-stp" "xpath" "cl-who" "css-sexp"))
+  :depends-on ("anaphora" "alexandria" "webfunk" "drakma" "closure-html" "cxml-stp" "xpath" "cl-who" "css-sexp" "elephant" "cl-facebook"))
 
 
 
