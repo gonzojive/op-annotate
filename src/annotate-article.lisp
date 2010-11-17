@@ -14,6 +14,7 @@
            (who:htm
             (:p                         ;(who:fmt "~A:  " i)
               :id (format nil "paragraph-~A" i)
+              :class "article-para"
               (:input :type "checkbox" :class "para-check")
               (:span 
                :class "contents"
@@ -71,7 +72,7 @@
      :width "50%" :font-size "6pt")
 
     ;; paragraph/sentence styling
-    (:p :line-height "1.5em" :clear "both")
+    (:p.article-para :line-height "1.5em" :clear "both")
     ((css-sexp:ancestor :p.checked :.sentence)
      :border "1px solid #ddd"
      :background-color "#eee")
@@ -116,10 +117,20 @@
 
     ;; labels
 ;    (:.tag :xbrowser-border-radius "5px" :font "9pt verdana,arial,sans-serif" :line-height "12px" :padding "2px 5px")
-    (:.tag :xbrowser-border-radius "3px" :font "10px verdana,arial,sans-serif" :line-height "12px" :padding "2px 5px" :white-space "nowrap")
+    (:.tag :xbrowser-border-radius "3px" :font "10px verdana,arial,sans-serif" :line-height "12px" :padding "2px 3px 2px 5px" :white-space "nowrap")
     (:.tag-inline :position "relative" :top "-8px")
     (:.tag-light :color "#F9FFEF")
     (:.tag-dark :color "#FFE3E3")
+
+    ((css-sexp:ancestor :.tag :.remove)
+     :cursor "pointer"
+     :border-left "1px solid white"
+     :margin-left ".4em"
+     :padding "0 .4em")
+
+    ((css-sexp:ancestor :.tag :.remove\:hover)
+     :background-color "#fafafa"
+     :color "#333")
 
     ;; reactions
     ((css-sexp:ancestor :blockquote)
@@ -133,7 +144,7 @@
      :min-height "10em")
 
     ;; checkbox
-    (:p :position "relative" :left "-30px")
+    (:p.article-para :position "relative" :left "-30px")
     (:.para-check :float "left" :display "block" :width "19px")
     ((css-sexp:direct-ancestor :p :.contents) :display "block" :margin-left "30px")
 

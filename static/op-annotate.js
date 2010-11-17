@@ -21,14 +21,17 @@ $(function() {
                                        return this.data("op-annotate.text") || this.text();  
                                    },
                                    "onEdit"    : function(vals) {
-                                       console.log("current: %o", vals.current);
+
                                    },
                                    "onSubmit"    : function(vals) {
-                                       console.log("current: %o", vals.current);
                                        var txt = this.data("editable.current");
-                                       lines = txt;
                                        var html = txt.replace(/\n+/g, "<br/><br/>");
                                        this.data("op-annotate.text", txt);
+                                       this.html(html);
+                                   },
+                                   "onCancel"    : function(vals) {
+                                       var txt = this.data("editable.current");
+                                       var html = txt.replace(/\n+/g, "<br/><br/>");
                                        this.html(html);
                                    }
                                });
@@ -61,6 +64,8 @@ Tag.prototype.createElem = function () {
     elem.addClass("tag-light");
     elem.css("background-color", this.color);
     elem.text(this.text);
+    var rem = $("<span>").addClass("remove").text("X");
+    elem.append(rem);
     return elem;
 };
 
@@ -69,7 +74,9 @@ function TagButton(tag) {
 
     var elem = $("<a>");
     elem.attr("href", "#tags/" + encodeURIComponent(this.tag.text));
-    elem.append(tag.createElem());
+    var tagElem = tag.createElem();
+    elem.append(tagElem);
+    $(".remove", tagElem).hide();
     
     this.elem = elem;
 
@@ -79,7 +86,12 @@ function TagButton(tag) {
             event.preventDefault();
             ARTICLE.selectedParagraphs().map(
                 function(p) {
-                    p.addAnnotation(new Annotation(tag));
+                    var annots = p.annotations();
+                    var indexOfTag = annots.map(propFn("tag")).indexOf(tag);
+                    if (indexOfTag == -1)
+                    {
+                        p.addAnnotation(new Annotation(tag));         
+                    }
                 });
         });
 };
@@ -89,7 +101,7 @@ function Article(elem)
     var article = this;
 
     this.elem = elem;
-    this._paragraphs = $("p", this.elem).toArray().map(function (p) {
+    this._paragraphs = $("p.article-para", this.elem).toArray().map(function (p) {
                                                            return new Paragraph(p);
                                                        });
     this.lastCheckedElem = null;
@@ -195,13 +207,23 @@ Paragraph.prototype.addAnnotation = function(annotation)
 {
     this._annotations.push(annotation);
     var cont = $(".tag-container", this.elem);
-    cont.append(annotation.tag.createElem());
+    var annotationElem = annotation.tag.createElem();
+    cont.append(annotationElem);
     cont.append($("<span>").text("  "));
+    var p = this;
+    annotation.elem = annotationElem;
+    $(".remove", annotationElem).click(
+        function(event) {
+            p.removeAnnotation(annotation);
+        });
 };
 
 Paragraph.prototype.removeAnnotation = function(annotation)
 {
-    this._annotations.push(annotation);
+    this._annotations = this._annotations.filter(function (x) {
+                                                      return x !== annotation;
+                                                 });
+    $(annotation.elem).detach();
 };
 
 Paragraph.prototype.annotations = function() {

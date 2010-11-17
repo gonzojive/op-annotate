@@ -1,5 +1,12 @@
 (in-package :op-annotate)
 
+
+(defclass article ()
+  ((paragraphs :initarg  :paragraphs :initform nil     :accessor article-paragraphs)
+   (html-page :initarg  :html-page :initform nil     :accessor article-html-page)
+   (byline     :accessor article-byline :initarg  :byline)
+   (title      :accessor article-title  :initarg  :title)))
+
 (defun split-words (string)
   (let ((n nil))
     (ppcre:do-matches-as-strings (sent "(\\w+)|(\\$\\d+\\.\\d+)|([^\\w\\s]+)" string)
@@ -12,12 +19,6 @@
     (ppcre:do-matches-as-strings (sent "(\\S.+?[.!?])(?=\\s+|$)" string)
       (push sent n))
     (nreverse n)))
-
-(defclass article ()
-  ((paragraphs :initarg  :paragraphs :initform nil     :accessor article-paragraphs)
-   (html-page :initarg  :html-page :initform nil     :accessor article-html-page)
-   (byline     :accessor article-byline :initarg  :byline)
-   (title      :accessor article-title  :initarg  :title)))
 
 (defparameter *article-cache* (make-hash-table :test #'equal))
 (defun download-article (url)
