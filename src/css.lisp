@@ -40,6 +40,8 @@
                        :background-color "#eee")
     (:.sentence :border "1px solid #fff")
 
+    (:.byline :color "#555" :font-size ".9em")
+
     ;; tabs
     (:.tabs :display "block"
             :text-transform "uppercase"
@@ -65,7 +67,7 @@
     (:.tab-content
      :border "1px solid #cccccc"
      :padding "10px 4px"
-     :margin "0")
+     :margin "0 0 1em 0")
     ((css-sexp:direct-ancestor :.tabs :li\:first-child)
      :border-width "1px 1px 1px 1px"
      )

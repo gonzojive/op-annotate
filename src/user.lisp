@@ -54,7 +54,7 @@ attached to the user, and returns them as multiple values."
               (me (facebook::graph-request fb-session "/me")))
     (cdr (assoc :email me))))
 
-(defun user-from-request (request &key (create? t) (update? t) (update-session? t))
+(defun user-from-request (request &key (create? t) (update? nil) (update-session? t))
   "Returns a user from the cookies embedded in the HTTP request, or
 creates one if the user is logged in."
   (declare (optimize (debug 3)))

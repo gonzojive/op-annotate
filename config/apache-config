@@ -1,0 +1,42 @@
+<VirtualHost *:80>
+    ServerName pseudoliberals.com
+    ServerAlias *.pseudoliberals.com
+
+    ErrorLog /apps/bpspills/log/apache-error.log
+    CheckSpelling On
+    # LOGGING
+
+    # Possible values include: debug, info, notice, warn, error, crit,
+    # alert, emerg.
+    LogLevel warn
+    CustomLog  /apps/bpspills/log/apache-access.log combined
+    ServerSignature On
+
+    #AddOutputFilterByType DEFLATE text/html text/plain text/xml text/javascript text/css
+
+    FilterDeclare gzip CONTENT_SET
+    FilterProvider gzip DEFLATE Content-Type $text/
+    FilterChain gzip
+
+    DocumentRoot /apps/bpspills/server/static/
+
+    <Directory "/apps/bpspills/server/static/" >
+	Order allow,deny
+	Allow from all
+    </Directory>
+    
+    # proxy to hunchentoot
+
+    <IfModule mod_proxy.c>
+      ProxyRequests Off
+      <Proxy *>
+        Order allow,deny
+        Allow from all
+      </Proxy>
+      ProxyVia On
+    </IfModule>
+
+    ProxyPass / http://127.0.0.1:4000/
+    ProxyPassReverse / http://127.0.0.1:4000/
+
+</VirtualHost>

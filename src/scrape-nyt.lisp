@@ -13,7 +13,7 @@
 
 (defclass article-annotation ()
   ((article :initarg  :article :initform nil     :accessor annotation-article :index t)
-   (paragraph-index :initarg  :paragraph-index :initform nil     :accessor annotation-article)
+   (paragraph-index :initarg  :paragraph-index :initform nil     :accessor annotation-paragraph-index)
    (tag :initarg :tag :initform nil     :accessor annotation-tag :index t)
    (comment :initarg :comment :initform nil :accessor annotation-comment)
    (user :initarg :user :initform nil :accessor annotation-user :index t))
@@ -36,22 +36,28 @@
 ;;      (push sent n))
 ;;    (nreverse n)))
 
-(defparameter *article-cache* (make-hash-table :test #'equal))
-(defun download-article (url)
+(defun download-article (url &key force)
   (multiple-value-bind (page existing)
       (aif (ele:get-instance-by-value 'article 'url url)
-           (values (article-html-page it) it)
-           (let ((page
-                  (or (gethash url *article-cache*)
-                      (setf (gethash url *article-cache*)
-                            (drakma:http-request url
-                                                 :external-format-in :utf-8
-                                                 :cookie-jar (make-instance 'drakma:cookie-jar))))))
-             (values page nil)))
+           (values (if force
+                       (setf (article-html-page it) (download-article* url :force force))
+                       (article-html-page it))
+                   it)
+           (values (download-article* url :force force)))
     (parse-nyt-article page url existing)))
 
-(defparameter *test-nyt-article* (download-article
-                                  "http://www.nytimes.com/2010/11/04/opinion/04orszag.html?partner=rssnyt&emc=rss"))
+(defparameter *article-cache* (make-hash-table :test #'equal))
+(defun download-article* (url &key force)
+  (let ((page
+         (or (and (not force) (gethash url *article-cache*))
+             (setf (gethash url *article-cache*)
+                   (drakma:http-request url
+                                        :external-format-in :utf-8
+                                        :cookie-jar (make-instance 'drakma:cookie-jar))))))
+    page))
+
+;(defparameter *test-nyt-article* (download-article
+;                                  "http://www.nytimes.com/2010/11/04/opinion/04orszag.html?partner=rssnyt&emc=rss"))
 
 (defun regex-trim (string)
   (ppcre:regex-replace-all "^\\s+|\\s+$" string ""))

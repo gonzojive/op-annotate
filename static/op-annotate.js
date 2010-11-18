@@ -28,6 +28,7 @@ $(function() {
                                        var html = txt.replace(/\n+/g, "<br/><br/>");
                                        this.data("op-annotate.text", txt);
                                        this.html(html);
+                                       ARTICLE.setNeedsSync();
                                    },
                                    "onCancel"    : function(vals) {
                                        var txt = this.data("editable.current");
@@ -37,6 +38,21 @@ $(function() {
                                });
 
       $("#article-form").submit(function (ev) { ev.preventDefault(); });
+
+      var ARTICLE_ANNOTATIONS_SUMMARY = ARTICLE_ANNOTATIONS_SUMMARY || null;
+      if (ARTICLE_ANNOTATIONS_SUMMARY)
+      {
+          ARTICLE.loadSummary(ARTICLE_ANNOTATIONS_SUMMARY);
+      }
+
+      // admin
+      $(".fetched-op-ed a").click(
+          function(event)
+          {
+              event.preventDefault();
+              $("#scrape-url")[0].value = event.target.href;
+          });
+      console.log("fetched a's: %o", $(".fetched-op-ed a"));
   });
 
 function Tag(text, bgColor) {
@@ -53,6 +69,14 @@ var TAGS = [new Tag("inane", "#64992C"),
             new Tag("vague", "#444444")
             
             ];
+
+function tagByName(name) {
+    for (var i=0; i < TAGS.length; i++)
+    {
+        if (TAGS[i].text === name)
+            return TAGS[i];
+    }
+};
 
 function Annotation(tag) {
     this.tag = tag;    
@@ -93,7 +117,9 @@ function TagButton(tag) {
                         p.addAnnotation(new Annotation(tag));         
                     }
                 });
+            ARTICLE.setNeedsSync();
         });
+
 };
 
 function Article(elem) 
@@ -138,6 +164,10 @@ function Article(elem)
             //article.lastCheckedElem = elem;
             article.highlightParas();
         });
+};
+
+Article.prototype.oid = function () {
+    return $(".article-oid", this.elem).text();
 };
 
 Article.prototype.paragraphs = function () {
@@ -192,11 +222,104 @@ Article.prototype.highlightParas = function () {
     }
 };
 
+Article.prototype.setNeedsSync = function ()
+{
+    console.log("we need to sync!");
+    this.needsSync = true;
+    var article = this;
+    function update() {
+        if (article.needsSync)
+        {
+            article.sendAnnotations();
+            article.needsSync = false;
+        }
+    }
+
+    setTimeout(update, 200);
+};
+
+Article.prototype.sendAnnotations = function ()
+{
+    var obj = this.annotationSummary();
+
+    var json = JSON.stringify(obj);
+
+    jQuery.getJSON("/user-submit-annotations",
+                   { "annotations-obj" : json,
+                     "article-oid" : this.oid() },
+                   function(data, textStatus, xhr) {
+                       console.log(data);
+                   });
+};
+
+Article.prototype.annotationSummary = function ()
+{
+    return this.paragraphs().map (
+        function(p) {
+            return p.annotationSummary();
+        });
+};
+
+Article.prototype.loadSummary = function (summary)
+{
+    var paras = this.paragraphs();
+    for (var i=0; i < paras.length; i++)
+    {
+        var p = paras[i];
+        var psum = summary[i];
+        if (psum && psum.tags)
+        {
+            psum.tags.map(function (tagName) {
+                              var tag = tagByName(tagName);
+                              p.addAnnotation(new Annotation(tag));
+                          });
+        }
+
+        if (psum && psum.comments) {
+            var comment = psum.comments[0];
+            // TODO insert comment annotation
+        }
+    }
+};
+
+Article.prototype.loadAnnotations = function ()
+{
+    var article = this;
+    jQuery.getJSON("/user-get-annotations",
+                   { "article-oid" : this.oid() },
+                   function(data, textStatus, xhr)
+                   {
+                       if (data)
+                       {
+                           article.loadSummary(data);
+                           article.loaded = true;
+                       }
+                   });
+};
+
 function Paragraph(elem)
 {
     this.elem = elem;
     this._checkbox = $(".para-check", this.elem)[0];
     this._annotations = [];
+};
+
+function identity(x) {
+     return x;
+};
+
+Paragraph.prototype.annotationSummary = function()
+{
+  var tags = this.annotations().map(
+      function(annot) {
+          return annot.tag.text;
+      }).filter(identity);
+
+    var comments = this.annotations().map(propFn("comment")).filter(identity);
+    return {
+        "tags" : tags,
+        "comments" : comments
+    };
 };
 
 Paragraph.prototype.checkbox = function() {
@@ -215,6 +338,7 @@ Paragraph.prototype.addAnnotation = function(annotation)
     $(".remove", annotationElem).click(
         function(event) {
             p.removeAnnotation(annotation);
+            ARTICLE.setNeedsSync();
         });
 };
 
@@ -232,5 +356,6 @@ Paragraph.prototype.annotations = function() {
 
 function opAnnotateFBInit()
 {
-
+    
 }
+
