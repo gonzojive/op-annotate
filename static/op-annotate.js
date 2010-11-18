@@ -40,7 +40,8 @@ var TAGS = [new Tag("inane", "#64992C"),
             new Tag("inaccurate", "#CC0000"),
             new Tag("exaggeration", "#ff4800"),
             new Tag("double standard", "#ffb400"),
-            new Tag("vague", "#444444")
+            new Tag("vague", "#444444"),
+            new Tag("who cares?", "#ea57e1")
             
             ];
 
@@ -306,6 +307,7 @@ function Paragraph(elem)
                 if (txt.length === 0)
                 {
                     txt = null;
+                    //this.hide();
                 }
                 paragraph.comment(txt);
                 ARTICLE.setNeedsSync();
@@ -373,7 +375,7 @@ Paragraph.prototype.comment = function()
             {
                 this.removeAnnotation(commentAnnotation);
             }
-                
+            $("blockquote", this.elem).html("").hide();
         }
     }
     else

@@ -60,7 +60,11 @@ $.fn.editable = function(options){
 		if(opts.submit){
 			$('<button/>').appendTo($this)
 						.html(opts.submit)
-						.one('mouseup',function(){opts.toNonEditable($(this).parent(),true)});
+						.one('click',function(ev){
+                                                         ev.preventDefault();
+                                                         ev.stopPropagation();
+                                                         opts.toNonEditable($(this).parent(),true);
+                                                     });
 		}else
 			$this.one(opts.submitBy,function(){opts.toNonEditable($(this),true)})
 				 .children()
@@ -69,7 +73,7 @@ $.fn.editable = function(options){
 		if(opts.cancel)
 			$('<button/>').appendTo($this)
 						.html(opts.cancel)
-						.one('mouseup',function(){opts.toNonEditable($(this).parent(),false)});
+						.one('click',function(){opts.toNonEditable($(this).parent(),false)});
 		// Call User Function
 		if($.isFunction(opts.onEdit))
 			opts.onEdit.apply(	$this,
