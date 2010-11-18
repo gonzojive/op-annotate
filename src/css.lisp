@@ -76,6 +76,9 @@
      :border-bottom "1px solid white"
      :background-color "white")
 
+    ;; add-comment buttons
+    (:.add-comment :font-size "85%" :text-decoration "none" :white-space "nowrap")
+    (:.add-comment\:hover :text-decoration "underline")
     ;; labels
 ;    (:.tag :xbrowser-border-radius "5px" :font "9pt verdana,arial,sans-serif" :line-height "12px" :padding "2px 5px")
     (:.tag :xbrowser-border-radius "3px" :font "10px verdana,arial,sans-serif" :line-height "12px" :padding "2px 3px 2px 5px" :white-space "nowrap")

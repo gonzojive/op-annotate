@@ -8,6 +8,16 @@
  *
  * Date: Mar 02 2009
  */
+$.fn.edit = function(){
+    $this = $(this);
+    var opts = $this.data("editable.options");
+    $this.toArray().map(function(elem) {
+                            opts.toEditable.apply(elem);
+                        });
+
+    return $this;
+};
+
 $.fn.editable = function(options){
 	var defaults = {
 		onEdit: null,
@@ -36,7 +46,8 @@ $.fn.editable = function(options){
 	var options = $.extend(defaults, options);
 	
 	options.toEditable = function(){
-		$this = $(this);
+	    $this = $(this);
+            $this.unbind($this.data('editable.options').editBy,$this.data('editable.options').toEditable);
 		var opts = $this.data('editable.options');
 		$this.data('editable.current', opts.editValue.apply($this));
 		$.editableFactory[opts.type].toEditable($this.empty(),opts);
@@ -110,7 +121,7 @@ $.editableFactory = {
 						 .val($this.data('editable.current'));
 		},
 		getValue: function($this,options){
-			return $this.children().val();
+			return $("> input",$this).val();
 		}
 	},
 	'password': {
@@ -121,8 +132,9 @@ $.editableFactory = {
 										 .val($this.data('editable.current'));
 		},
 		getValue: function($this,options){
-			$this.data('editable.password',$this.children().val());
-			return $this.children().val();
+                    var val = $("> input",$this).val();
+		    $this.data('editable.password',val);
+		    return val;
 		}
 	},
 	'textarea': {
@@ -131,7 +143,7 @@ $.editableFactory = {
 							.val($this.data('editable.current'));
 		},
 		getValue: function($this,options){
-			return $this.children().val();
+			return $("> textarea",$this).val();
 		}
 	},
 	'select': {

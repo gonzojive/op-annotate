@@ -23,36 +23,29 @@
            :for i :from 1
            :do
            (who:htm
-            (:p                         ;(who:fmt "~A:  " i)
-              :id (format nil "paragraph-~A" i)
-              :class "article-para"
-              (:input :type "checkbox" :class "para-check")
-              (:span 
-               :class "contents"
-               (loop :for j :from 1
-                     :for sent :in (list para) ;;(split-sentences para)
-                     :do
-                     (who:htm
-                      (:span :class "sentence"
-                             :id (format nil "sentence-~A-~A" i j)
-                             :title (format nil "Paragraph ~A" i);(format nil "Paragraph ~A, sentence ~A" i j)
-                                    (who:esc sent)
-                                        ;(who:fmt "[~A]  " (elt "abcdefghi" j))
-                             )
-                         "  "))
-               (:span :class "tag-container")
-               #+nil
-               (when (< (random 100) 20)
-                 (who:htm
-                  (:span :class "tag tag-dark tag-inline" :style "background-color: #CC0000;;"
-                         "inane"))))
-              (when (eql i 1)
-                (who:htm
-                 (:blockquote
-                  "There are numerous examples of liberals who expound moralism in all its forms.  To suggest that modern liberals care not for morals is absurd.  Many would argue the opposite, that they care deeply for the poor but conservatives lack the common decency to blah.")))
-
-
-              ))))))
+            (:div
+              :class "paragraph-container"
+                     (:p
+                      :id (format nil "paragraph-~A" i)
+                      :class "article-para"
+                      (:input :type "checkbox" :class "para-check")
+                      (:span 
+                       :class "contents"
+                       (loop :for j :from 1
+                             :for sent :in (list para) ;;(split-sentences para)
+                             :do
+                             (who:htm
+                              (:span :class "sentence"
+                                     :id (format nil "sentence-~A-~A" i j)
+                                     :title (format nil "Paragraph ~A" i) ;;"Paragraph ~A, sentence ~A" i j
+                                            
+                                            (who:esc sent))
+                                 "  "))
+                       (:span :class "tag-container")
+                       "  "
+                       (:a :class "add-comment" :href (format nil "#add-comment/~A/~A" i (random 100000))
+                           (who:esc "> comment"))))
+                     (:blockquote "")))))))
 
 (webfunk:web-defun article ((oid :parameter-type 'integer) scraped-html)
   (ele:ensure-transaction ()

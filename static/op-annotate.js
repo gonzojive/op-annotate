@@ -12,34 +12,9 @@ $(function() {
       $(".toggle-overview").mouseenter(function() { $(".overviewable").addClass("overview-mode"); })
       $(".toggle-overview").mouseleave(function() { $(".overviewable").removeClass("overview-mode"); })
       
-      $('blockquote').editable({
-                                   "type"      : 'textarea',
-                                   "cancel"    : "Cancel",
-                                   "submit"    : "Save",
-                                   "replace"   : null,
-                                   "editValue"     : function() {
-                                       return this.data("op-annotate.text") || this.text();  
-                                   },
-                                   "onEdit"    : function(vals) {
-
-                                   },
-                                   "onSubmit"    : function(vals) {
-                                       var txt = this.data("editable.current");
-                                       var html = txt.replace(/\n+/g, "<br/><br/>");
-                                       this.data("op-annotate.text", txt);
-                                       this.html(html);
-                                       ARTICLE.setNeedsSync();
-                                   },
-                                   "onCancel"    : function(vals) {
-                                       var txt = this.data("editable.current");
-                                       var html = txt.replace(/\n+/g, "<br/><br/>");
-                                       this.html(html);
-                                   }
-                               });
-
       $("#article-form").submit(function (ev) { ev.preventDefault(); });
 
-      var ARTICLE_ANNOTATIONS_SUMMARY = ARTICLE_ANNOTATIONS_SUMMARY || null;
+      var ARTICLE_ANNOTATIONS_SUMMARY = window.ARTICLE_ANNOTATIONS_SUMMARY || null;
       if (ARTICLE_ANNOTATIONS_SUMMARY)
       {
           ARTICLE.loadSummary(ARTICLE_ANNOTATIONS_SUMMARY);
@@ -52,7 +27,6 @@ $(function() {
               event.preventDefault();
               $("#scrape-url")[0].value = event.target.href;
           });
-      console.log("fetched a's: %o", $(".fetched-op-ed a"));
   });
 
 function Tag(text, bgColor) {
@@ -127,7 +101,7 @@ function Article(elem)
     var article = this;
 
     this.elem = elem;
-    this._paragraphs = $("p.article-para", this.elem).toArray().map(function (p) {
+    this._paragraphs = $(".paragraph-container", this.elem).toArray().map(function (p) {
                                                            return new Paragraph(p);
                                                        });
     this.lastCheckedElem = null;
@@ -224,7 +198,6 @@ Article.prototype.highlightParas = function () {
 
 Article.prototype.setNeedsSync = function ()
 {
-    console.log("we need to sync!");
     this.needsSync = true;
     var article = this;
     function update() {
@@ -248,7 +221,7 @@ Article.prototype.sendAnnotations = function ()
                    { "annotations-obj" : json,
                      "article-oid" : this.oid() },
                    function(data, textStatus, xhr) {
-                       console.log(data);
+
                    });
 };
 
@@ -275,8 +248,15 @@ Article.prototype.loadSummary = function (summary)
                           });
         }
 
-        if (psum && psum.comments) {
+        if (psum && psum.comments)
+        {
             var comment = psum.comments[0];
+            if (comment)
+            {
+                var annotation = new Annotation();
+                annotation.comment = comment;
+                p.addAnnotation(annotation);
+            }
             // TODO insert comment annotation
         }
     }
@@ -300,19 +280,113 @@ Article.prototype.loadAnnotations = function ()
 function Paragraph(elem)
 {
     this.elem = elem;
+    //this.p = $("p.article-para", elem)[0];
     this._checkbox = $(".para-check", this.elem)[0];
     this._annotations = [];
+
+    var paragraph = this;
+
+    $('blockquote', elem).editable(
+        {
+            "type"      : 'textarea',
+            "cancel"    : "Cancel",
+            "submit"    : "Save",
+            "replace"   : null,
+            "editValue" : function() {
+                return this.data("op-annotate.text") || this.text();  
+            },
+            "onEdit"    : function(vals)
+            {
+                this.prepend("<h4>Justify your tags with a comment</h4>");
+                $('.add-comment', paragraph.elem).hide();
+            },
+            "onSubmit"  : function(vals) {
+                var txt = this.data("editable.current");
+                this.data("op-annotate.text", txt);
+                if (txt.length === 0)
+                {
+                    txt = null;
+                }
+                paragraph.comment(txt);
+                ARTICLE.setNeedsSync();
+                paragraph.toggleEditComment(false);
+            },
+            "onCancel"    : function(vals) {
+                var txt = this.data("editable.current");
+                var html = txt.replace(/\n+/g, "<br/><br/>");
+                this.html(html);
+                paragraph.toggleEditComment(false);
+            }
+        }).hide();
+
+    $('.add-comment', elem).click(
+        function (event) {
+            event.preventDefault();
+            paragraph.toggleEditComment(true);
+        });
+
 };
+
+Paragraph.prototype.toggleEditComment = function(showp)
+{
+    if (showp)
+    {
+        $('blockquote',   this.elem).show().edit();
+        $('.add-comment', this.elem).hide();
+    }
+    else
+    {
+        $('.add-comment', this.elem).show();
+    }
+};
+
 
 function identity(x) {
      return x;
+};
+
+Paragraph.prototype.comment = function()
+{
+    var commentAnnotation = this.annotations().filter(propFn("comment"))[0];
+    if (arguments.length > 0)
+    {
+        var val = arguments[0];
+        if (val)
+        {
+            if (commentAnnotation)
+            {
+                this.removeAnnotation(commentAnnotation);
+                commentAnnotation = null;
+            }
+
+            if (!commentAnnotation)
+            {
+                commentAnnotation = new Annotation();
+                commentAnnotation.comment = val;
+                this.addAnnotation(commentAnnotation);
+            }
+            commentAnnotation.comment = val;
+        }
+        else
+        {
+            if (commentAnnotation)
+            {
+                this.removeAnnotation(commentAnnotation);
+            }
+                
+        }
+    }
+    else
+    {
+        return commentAnnotation.comment;
+    }
 };
 
 Paragraph.prototype.annotationSummary = function()
 {
   var tags = this.annotations().map(
       function(annot) {
-          return annot.tag.text;
+          return annot.tag && annot.tag.text;
       }).filter(identity);
 
     var comments = this.annotations().map(propFn("comment")).filter(identity);
@@ -330,16 +404,24 @@ Paragraph.prototype.addAnnotation = function(annotation)
 {
     this._annotations.push(annotation);
     var cont = $(".tag-container", this.elem);
-    var annotationElem = annotation.tag.createElem();
-    cont.append(annotationElem);
-    cont.append($("<span>").text("  "));
-    var p = this;
-    annotation.elem = annotationElem;
-    $(".remove", annotationElem).click(
-        function(event) {
-            p.removeAnnotation(annotation);
-            ARTICLE.setNeedsSync();
-        });
+    if (annotation.tag)
+    {
+        var annotationElem = annotation.tag.createElem();
+        cont.append(annotationElem);
+        cont.append($("<span>").text("  "));
+        var p = this;
+        annotation.elem = annotationElem;
+        $(".remove", annotationElem).click(
+            function(event) {
+                p.removeAnnotation(annotation);
+                ARTICLE.setNeedsSync();
+            });
+    }
+    if (annotation.comment)
+    {
+        var html = annotation.comment.replace(/\n+/g, "<br/><br/>");
+        $("blockquote", this.elem).html(html).show();
+    }
 };
 
 Paragraph.prototype.removeAnnotation = function(annotation)
@@ -347,7 +429,10 @@ Paragraph.prototype.removeAnnotation = function(annotation)
     this._annotations = this._annotations.filter(function (x) {
                                                       return x !== annotation;
                                                  });
-    $(annotation.elem).detach();
+    if (annotation.elem)
+    {
+        $(annotation.elem).detach();        
+    }
 };
 
 Paragraph.prototype.annotations = function() {

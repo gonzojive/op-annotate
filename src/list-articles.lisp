@@ -5,33 +5,9 @@
       "Thursday" "Friday" "Saturday"
       "Sunday"))
 
-(multiple-value-bind
-      (second minute hour date month year day-of-week dst-p tz)
-    (get-decoded-time)
-  (format t "It is now ~2,'0d:~2,'0d:~2,'0d of ~a, ~d/~2,'0d/~d (GMT~@d)"
-          hour
-          minute
-          second
-          (nth day-of-week *day-names*)
-          month
-          date
-          year
-          (- tz)))
-
-(webfunk:web-defun testpage ()
-  (setf (hunchentoot:content-type*) "text/plain; charset=utf-8")
-  (setf (hunchentoot:reply-external-format*) :utf-8)
-  "Madam Secretary → Middle East")
-
-(webfunk:web-defun testpage1 ()
-  (setf (hunchentoot:content-type*) "text/plain; charset=utf-8")
-  (setf (hunchentoot:reply-external-format*) :utf-8)
-  (values (drakma:http-request "http://localhost:4000/testpage")))
-
-(webfunk:web-defun testpage2 ()
-  (setf (hunchentoot:content-type*) "text/plain; charset=utf-8")
-  (setf (hunchentoot:reply-external-format*) :utf-8)
-  (values (drakma:http-request "http://pseudoliberals.com/testpage")))
+(defparameter *month-names*
+    '("January" "February" "March" "April" "May" "June"
+      "July" "August" "September" "October" "November" "December"))
 
 (defun top-articles-sidebar (stream)
   (ele:ensure-transaction ()
@@ -89,7 +65,17 @@
                             (:a :href (article-url op-ed)
                                 (who:esc (article-title op-ed)))
                             "  "
-                            (who:esc (article-author op-ed)))))))))
+                            (who:esc (article-author op-ed))
+                            ", "
+                            (multiple-value-bind
+                                  (second minute hour date month year day-of-week dst-p tz)
+                                (decode-universal-time (article-publication-date op-ed) 5)
+                              (who:fmt "~A, ~A ~2,'0D" ; ~d/~2,'0d/~d (GMT~@d)"
+                                       (nth day-of-week *day-names*)
+                                       (nth (1- month) *month-names*)
+                                       date))))))))
+                )
+
 
 
           (:script :type "text/javascript" :src "/static/jquery-1.4.3.js")
