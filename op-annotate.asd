@@ -18,6 +18,7 @@
 			 (:file "annotate-article" :depends-on ("conditions" "scrape-nyt" "user"))
 			 (:file "list-articles" :depends-on ("conditions" "user" "scrape-nyt"))
 			 (:file "scrape-article" :depends-on ("conditions" "user" "scrape-nyt"))
+			 (:file "admin-nyt" :depends-on ("conditions" "user" "scrape-nyt"))
                          
 	       )))
   :depends-on ("anaphora" "alexandria" "webfunk" "drakma" "closure-html" "cxml-stp" "xpath" "cl-who" "css-sexp" "elephant" "cl-facebook" "net-telent-date"))

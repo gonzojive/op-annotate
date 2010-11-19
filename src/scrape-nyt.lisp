@@ -20,7 +20,8 @@
   (:metaclass ele:persistent-metaclass))
 
 (defun open-store ()
-  (ele:open-store (list :bdb "/git/op-annotate/data/eledb/")))
+  (ele:open-store (list :bdb (asdf:system-relative-pathname (asdf:find-system :op-annotate)
+                                                            "data/eledb/"))))
 
 (defun split-words (string)
   (let ((n nil))
